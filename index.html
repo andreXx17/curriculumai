@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CurriculumAI</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0a0f; --surface: #111118; --surface2: #18181f;
+    --border: rgba(255,255,255,0.07); --accent: #c8f55a; --accent2: #7c6cfc;
+    --text: #f0f0f5; --muted: #6b6b80; --muted2: #9999aa;
+    --font-head: "Syne", sans-serif; --font-body: "DM Sans", sans-serif;
+  }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; overflow-x: hidden; }
+  body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background: radial-gradient(ellipse 60% 50% at 80% 10%, rgba(124,108,252,0.12) 0%, transparent 60%),
+                radial-gradient(ellipse 40% 40% at 10% 80%, rgba(200,245,90,0.06) 0%, transparent 50%); }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+  header { padding: 48px 0 0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .logo { font-family: var(--font-head); font-weight: 800; font-size: 18px; letter-spacing: -0.5px; }
+  .logo span { color: var(--accent); }
+  .lang-wrap { display: flex; align-items: center; gap: 6px; background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; }
+  .lang-wrap select { background: transparent; border: none; color: var(--text); font-size: 13px; font-family: var(--font-body); cursor: pointer; outline: none; }
+  .hero { padding: 72px 0 56px; text-align: center; }
+  .hero-tag { display: inline-block; font-size: 12px; font-weight: 500; color: var(--muted2); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 24px; }
+  h1 { font-family: var(--font-head); font-weight: 800; font-size: clamp(38px, 6vw, 64px); line-height: 1.05; letter-spacing: -2px; margin-bottom: 20px; }
+  h1 em { font-style: normal; color: var(--accent); }
+  .hero-sub { font-size: 17px; color: var(--muted2); font-weight: 300; line-height: 1.6; max-width: 520px; margin: 0 auto; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 40px; margin-bottom: 48px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+  @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+  .field { display: flex; flex-direction: column; gap: 8px; }
+  .field.full { grid-column: 1 / -1; }
+  label { font-size: 12px; font-weight: 500; color: var(--muted2); letter-spacing: 1px; text-transform: uppercase; }
+  input, select, textarea { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; font-family: var(--font-body); font-size: 15px; color: var(--text); outline: none; transition: border-color 0.2s; width: 100%; }
+  input:focus, select:focus, textarea:focus { border-color: rgba(200,245,90,0.4); }
+  textarea { resize: vertical; min-height: 80px; }
+  select option { background: #18181f; }
+  .generate-btn { width: 100%; padding: 18px; background: var(--accent); color: #0a0a0f; border: none; border-radius: 12px; font-family: var(--font-head); font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.2s; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .generate-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 32px rgba(200,245,90,0.25); }
+  .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+  .loading { display: none; text-align: center; padding: 48px 0; }
+  .loading.active { display: block; }
+  .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 20px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 14px; color: var(--muted2); }
+  .loading-steps { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+  .loading-step { font-size: 13px; color: var(--muted); opacity: 0; transform: translateY(4px); transition: all 0.4s; }
+  .loading-step.show { opacity: 1; transform: translateY(0); color: var(--muted2); }
+  .loading-step.done { color: var(--accent); }
+  #result { display: none; }
+  #result.active { display: block; }
+  .result-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 32px; gap: 16px; flex-wrap: wrap; }
+  .result-title { font-family: var(--font-head); font-size: 28px; font-weight: 800; letter-spacing: -1px; }
+  .result-meta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+  .meta-pill { font-size: 12px; padding: 4px 12px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); color: var(--muted2); }
+  .export-btns { display: flex; gap: 10px; flex-shrink: 0; }
+  .btn-outline { padding: 10px 18px; border: 1px solid var(--border); border-radius: 10px; background: transparent; color: var(--text); font-family: var(--font-body); font-size: 13px; cursor: pointer; transition: all 0.2s; }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 32px; }
+  @media (max-width: 600px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px; text-align: center; }
+  .stat-val { font-family: var(--font-head); font-size: 26px; font-weight: 800; color: var(--accent); }
+  .stat-label { font-size: 12px; color: var(--muted2); margin-top: 4px; }
+  .desc-block { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent2); border-radius: 14px; padding: 24px; margin-bottom: 32px; font-size: 15px; line-height: 1.7; color: var(--muted2); }
+  .section-label { font-size: 11px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+  .module { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 16px; overflow: hidden; }
+  .module:hover { border-color: rgba(255,255,255,0.12); }
+  .module-head { display: flex; align-items: center; gap: 16px; padding: 20px 24px; cursor: pointer; user-select: none; }
+  .module-num { width: 32px; height: 32px; border-radius: 8px; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-family: var(--font-head); font-size: 13px; font-weight: 700; color: var(--accent); flex-shrink: 0; }
+  .module-info { flex: 1; }
+  .module-name { font-family: var(--font-head); font-size: 16px; font-weight: 700; margin-bottom: 2px; }
+  .module-duration { font-size: 12px; color: var(--muted); }
+  .module-toggle { font-size: 18px; color: var(--muted); transition: transform 0.2s; }
+  .module.open .module-toggle { transform: rotate(180deg); }
+  .module-body { display: none; padding: 0 24px 24px; border-top: 1px solid var(--border); }
+  .module.open .module-body { display: block; }
+  .lessons { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .lesson { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; background: var(--surface2); border-radius: 10px; font-size: 14px; }
+  .lesson-icon { width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; margin-top: 1px; }
+  .lesson-icon.video { background: rgba(124,108,252,0.15); color: var(--accent2); }
+  .lesson-icon.quiz { background: rgba(200,245,90,0.1); color: var(--accent); }
+  .lesson-icon.exercise { background: rgba(255,150,80,0.1); color: #ff9650; }
+  .lesson-title { color: var(--text); line-height: 1.4; }
+  .lesson-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .objective-block { margin-top: 16px; }
+  .obj-title { font-size: 12px; color: var(--muted2); font-weight: 500; margin-bottom: 8px; }
+  .objectives { display: flex; flex-direction: column; gap: 6px; }
+  .objective { font-size: 13px; color: var(--muted2); display: flex; gap: 8px; align-items: flex-start; }
+  .objective::before { content: "→"; color: var(--accent); flex-shrink: 0; }
+  .quiz-section { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-top: 24px; }
+  .quiz-title { font-family: var(--font-head); font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--accent2); }
+  .quiz-q { font-size: 14px; color: var(--text); margin-bottom: 8px; font-weight: 500; }
+  .quiz-opts { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+  .quiz-opt { font-size: 13px; color: var(--muted2); padding: 8px 12px; background: var(--surface2); border-radius: 8px; border: 1px solid var(--border); }
+  .sales-block { background: linear-gradient(135deg, rgba(124,108,252,0.1) 0%, rgba(200,245,90,0.05) 100%); border: 1px solid rgba(124,108,252,0.2); border-radius: 20px; padding: 32px; margin-top: 32px; text-align: center; }
+  .sales-title { font-family: var(--font-head); font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+  .sales-sub { font-size: 14px; color: var(--muted2); margin-bottom: 24px; }
+  .price-tag { display: inline-block; font-family: var(--font-head); font-size: 42px; font-weight: 800; color: var(--accent); margin-bottom: 8px; }
+  .error-box { display: none; background: rgba(255,80,80,0.08); border: 1px solid rgba(255,80,80,0.2); border-radius: 12px; padding: 16px 20px; font-size: 14px; color: #ff8080; margin-top: 16px; }
+  .error-box.active { display: block; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">Curriculum<span>AI</span></div>
+    <div class="lang-wrap">
+      <span>🌐</span>
+      <select id="langSelect" onchange="setLang(this.value)">
+        <option value="en" selected>English</option>
+        <option value="pt">Português</option>
+        <option value="es">Español</option>
+        <option value="fr">Français</option>
+        <option value="de">Deutsch</option>
+      </select>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-tag" id="ui-tag"></div>
+    <h1 id="ui-h1"></h1>
+    <p class="hero-sub" id="ui-sub"></p>
+  </section>
+
+  <div class="card">
+    <div class="form-row">
+      <div class="field">
+        <label id="ui-lbl-topic"></label>
+        <input type="text" id="topic" />
+      </div>
+      <div class="field">
+        <label id="ui-lbl-audience"></label>
+        <input type="text" id="audience" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label id="ui-lbl-level"></label>
+        <select id="level">
+          <option value="beginner" id="opt-beg"></option>
+          <option value="intermediate" id="opt-mid"></option>
+          <option value="advanced" id="opt-adv"></option>
+        </select>
+      </div>
+      <div class="field">
+        <label id="ui-lbl-duration"></label>
+        <select id="duration">
+          <option value="2 hours" id="opt-d1"></option>
+          <option value="5 hours" id="opt-d2" selected></option>
+          <option value="10 hours" id="opt-d3"></option>
+          <option value="20 hours" id="opt-d4"></option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field full">
+        <label id="ui-lbl-goals"></label>
+        <textarea id="goals"></textarea>
+      </div>
+    </div>
+    <button class="generate-btn" id="generateBtn" onclick="generateCurriculum()">
+      <span>✦</span> <span id="ui-btn"></span>
+    </button>
+    <div class="error-box" id="errorBox"></div>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div class="loading-text" id="ui-loading"></div>
+    <div class="loading-steps">
+      <div class="loading-step" id="s1"></div>
+      <div class="loading-step" id="s2"></div>
+      <div class="loading-step" id="s3"></div>
+      <div class="loading-step" id="s4"></div>
+      <div class="loading-step" id="s5"></div>
+    </div>
+  </div>
+
+  <div id="result"></div>
+</div>
+
+<script>
+const T = {
+  en: {
+    tag: "For online course creators",
+    h1: "Your course structured<br>in <em>seconds</em>",
+    sub: "Enter the topic and audience. AI generates the full curriculum — modules, lessons, objectives, quizzes and more.",
+    lblTopic: "Course topic", lblAudience: "Target audience", lblLevel: "Level", lblDuration: "Total duration", lblGoals: "Main goals (optional)",
+    phTopic: "e.g. Digital Marketing for Beginners", phAudience: "e.g. Freelancers with no marketing experience", phGoals: "e.g. Students should be able to run paid campaigns and measure results...",
+    beg: "Beginner", mid: "Intermediate", adv: "Advanced",
+    d1: "2 hours (mini-course)", d2: "5 hours (full course)", d3: "10 hours (intensive)", d4: "20 hours (bootcamp)",
+    btn: "Generate Full Curriculum",
+    loading: "Building your curriculum...",
+    steps: ["↳ Analysing topic and audience", "↳ Structuring modules", "↳ Creating lessons and objectives", "↳ Generating quizzes", "↳ Finalising curriculum"],
+    errFill: "Please fill in the course topic and target audience.",
+    errGen: "Error generating curriculum. Please try again.",
+    copyBtn: "Copy JSON", exportBtn: "Export PDF",
+    lblModules: "Modules", lblLessons: "Lessons", lblDurationStat: "Duration",
+    structureLabel: "Course structure", objLabel: "Learning objectives",
+    quizLabel: "Quiz Questions",
+    salesTitle: "Course ready to publish", salesSub: "Upload this course to Teachable, Hotmart or Udemy and start selling.", priceNote: "Suggested price for this type of course",
+    video: "Video", quiz: "Quiz", exercise: "Exercise",
+    contentLang: "English"
+  },
+  pt: {
+    tag: "Para criadores de cursos online",
+    h1: "O teu curso estruturado<br>em <em>segundos</em>",
+    sub: "Introduz o tema e o público. A IA cria o currículo completo — módulos, aulas, objetivos, quizzes e tudo o resto.",
+    lblTopic: "Tema do curso", lblAudience: "Público-alvo", lblLevel: "Nível", lblDuration: "Duração total", lblGoals: "Objetivos principais (opcional)",
+    phTopic: "ex: Marketing Digital para Iniciantes", phAudience: "ex: Freelancers sem experiência em marketing", phGoals: "ex: Que os alunos consigam criar campanhas pagas e medir resultados...",
+    beg: "Iniciante", mid: "Intermédio", adv: "Avançado",
+    d1: "2 horas (mini-curso)", d2: "5 horas (curso completo)", d3: "10 horas (intensivo)", d4: "20 horas (bootcamp)",
+    btn: "Gerar Currículo Completo",
+    loading: "A construir o teu currículo...",
+    steps: ["↳ A analisar o tema e o público", "↳ A estruturar os módulos", "↳ A criar as aulas e objetivos", "↳ A gerar os quizzes", "↳ A finalizar o currículo"],
+    errFill: "Por favor preenche o tema do curso e o público-alvo.",
+    errGen: "Erro ao gerar o currículo. Tenta novamente.",
+    copyBtn: "Copiar JSON", exportBtn: "Exportar PDF",
+    lblModules: "Módulos", lblLessons: "Aulas", lblDurationStat: "Duração",
+    structureLabel: "Estrutura do curso", objLabel: "Objetivos de aprendizagem",
+    quizLabel: "Perguntas do Quiz",
+    salesTitle: "Curso pronto a publicar", salesSub: "Coloca este curso no Teachable, Hotmart ou Udemy e começa a vender.", priceNote: "Preço sugerido para este tipo de curso",
+    video: "Vídeo", quiz: "Quiz", exercise: "Exercício",
+    contentLang: "português europeu"
+  },
+  es: {
+    tag: "Para creadores de cursos online",
+    h1: "Tu curso estructurado<br>en <em>segundos</em>",
+    sub: "Introduce el tema y el público. La IA genera el currículo completo — módulos, clases, objetivos, quizzes y más.",
+    lblTopic: "Tema del curso", lblAudience: "Público objetivo", lblLevel: "Nivel", lblDuration: "Duración total", lblGoals: "Objetivos principales (opcional)",
+    phTopic: "ej: Marketing Digital para Principiantes", phAudience: "ej: Freelancers sin experiencia en marketing", phGoals: "ej: Que los alumnos puedan crear campañas de pago...",
+    beg: "Principiante", mid: "Intermedio", adv: "Avanzado",
+    d1: "2 horas (mini-curso)", d2: "5 horas (curso completo)", d3: "10 horas (intensivo)", d4: "20 horas (bootcamp)",
+    btn: "Generar Currículo Completo",
+    loading: "Construyendo tu currículo...",
+    steps: ["↳ Analizando tema y público", "↳ Estructurando módulos", "↳ Creando clases y objetivos", "↳ Generando quizzes", "↳ Finalizando currículo"],
+    errFill: "Por favor rellena el tema del curso y el público objetivo.",
+    errGen: "Error al generar el currículo. Inténtalo de nuevo.",
+    copyBtn: "Copiar JSON", exportBtn: "Exportar PDF",
+    lblModules: "Módulos", lblLessons: "Clases", lblDurationStat: "Duración",
+    structureLabel: "Estructura del curso", objLabel: "Objetivos de aprendizaje",
+    quizLabel: "Preguntas del Quiz",
+    salesTitle: "Curso listo para publicar", salesSub: "Sube este curso a Teachable, Hotmart o Udemy y empieza a vender.", priceNote: "Precio sugerido para este tipo de curso",
+    video: "Vídeo", quiz: "Quiz", exercise: "Ejercicio",
+    contentLang: "español"
+  },
+  fr: {
+    tag: "Pour les créateurs de cours en ligne",
+    h1: "Votre cours structuré<br>en <em>secondes</em>",
+    sub: "Entrez le sujet et le public. L'IA génère le programme complet — modules, leçons, objectifs, quiz et plus encore.",
+    lblTopic: "Sujet du cours", lblAudience: "Public cible", lblLevel: "Niveau", lblDuration: "Durée totale", lblGoals: "Objectifs principaux (optionnel)",
+    phTopic: "ex: Marketing Digital pour Débutants", phAudience: "ex: Freelances sans expérience en marketing", phGoals: "ex: Les élèves doivent pouvoir créer des campagnes payantes...",
+    beg: "Débutant", mid: "Intermédiaire", adv: "Avancé",
+    d1: "2 heures (mini-cours)", d2: "5 heures (cours complet)", d3: "10 heures (intensif)", d4: "20 heures (bootcamp)",
+    btn: "Générer le Programme Complet",
+    loading: "Construction de votre programme...",
+    steps: ["↳ Analyse du sujet et du public", "↳ Structure des modules", "↳ Création des leçons et objectifs", "↳ Génération des quiz", "↳ Finalisation du programme"],
+    errFill: "Veuillez remplir le sujet du cours et le public cible.",
+    errGen: "Erreur lors de la génération. Veuillez réessayer.",
+    copyBtn: "Copier JSON", exportBtn: "Exporter PDF",
+    lblModules: "Modules", lblLessons: "Leçons", lblDurationStat: "Durée",
+    structureLabel: "Structure du cours", objLabel: "Objectifs d'apprentissage",
+    quizLabel: "Questions du Quiz",
+    salesTitle: "Cours prêt à publier", salesSub: "Mettez ce cours sur Teachable, Hotmart ou Udemy et commencez à vendre.", priceNote: "Prix suggéré pour ce type de cours",
+    video: "Vidéo", quiz: "Quiz", exercise: "Exercice",
+    contentLang: "français"
+  },
+  de: {
+    tag: "Für Online-Kursersteller",
+    h1: "Dein Kurs strukturiert<br>in <em>Sekunden</em>",
+    sub: "Gib Thema und Zielgruppe ein. Die KI erstellt den vollständigen Lehrplan — Module, Lektionen, Ziele, Quizze und mehr.",
+    lblTopic: "Kursthema", lblAudience: "Zielgruppe", lblLevel: "Niveau", lblDuration: "Gesamtdauer", lblGoals: "Hauptziele (optional)",
+    phTopic: "z.B. Digitales Marketing für Anfänger", phAudience: "z.B. Freelancer ohne Marketingerfahrung", phGoals: "z.B. Schüler sollen bezahlte Kampagnen erstellen können...",
+    beg: "Anfänger", mid: "Mittelstufe", adv: "Fortgeschritten",
+    d1: "2 Stunden (Mini-Kurs)", d2: "5 Stunden (vollständiger Kurs)", d3: "10 Stunden (Intensivkurs)", d4: "20 Stunden (Bootcamp)",
+    btn: "Vollständigen Lehrplan Erstellen",
+    loading: "Lehrplan wird erstellt...",
+    steps: ["↳ Thema und Zielgruppe analysieren", "↳ Module strukturieren", "↳ Lektionen und Ziele erstellen", "↳ Quizze generieren", "↳ Lehrplan fertigstellen"],
+    errFill: "Bitte Kursthema und Zielgruppe ausfüllen.",
+    errGen: "Fehler beim Erstellen. Bitte erneut versuchen.",
+    copyBtn: "JSON kopieren", exportBtn: "PDF exportieren",
+    lblModules: "Module", lblLessons: "Lektionen", lblDurationStat: "Dauer",
+    structureLabel: "Kursstruktur", objLabel: "Lernziele",
+    quizLabel: "Quizfragen",
+    salesTitle: "Kurs bereit zur Veröffentlichung", salesSub: "Lade diesen Kurs auf Teachable, Hotmart oder Udemy hoch.", priceNote: "Empfohlener Preis für diesen Kurstyp",
+    video: "Video", quiz: "Quiz", exercise: "Übung",
+    contentLang: "Deutsch"
+  }
+};
+
+let currentLang = "en";
+
+function setLang(lang) {
+  currentLang = lang;
+  const t = T[lang];
+  document.getElementById("ui-tag").textContent = t.tag;
+  document.getElementById("ui-h1").innerHTML = t.h1;
+  document.getElementById("ui-sub").textContent = t.sub;
+  document.getElementById("ui-lbl-topic").textContent = t.lblTopic;
+  document.getElementById("ui-lbl-audience").textContent = t.lblAudience;
+  document.getElementById("ui-lbl-level").textContent = t.lblLevel;
+  document.getElementById("ui-lbl-duration").textContent = t.lblDuration;
+  document.getElementById("ui-lbl-goals").textContent = t.lblGoals;
+  document.getElementById("topic").placeholder = t.phTopic;
+  document.getElementById("audience").placeholder = t.phAudience;
+  document.getElementById("goals").placeholder = t.phGoals;
+  document.getElementById("opt-beg").textContent = t.beg;
+  document.getElementById("opt-mid").textContent = t.mid;
+  document.getElementById("opt-adv").textContent = t.adv;
+  document.getElementById("opt-d1").textContent = t.d1;
+  document.getElementById("opt-d2").textContent = t.d2;
+  document.getElementById("opt-d3").textContent = t.d3;
+  document.getElementById("opt-d4").textContent = t.d4;
+  document.getElementById("ui-btn").textContent = t.btn;
+  document.getElementById("ui-loading").textContent = t.loading;
+  t.steps.forEach((s, i) => { document.getElementById("s"+(i+1)).textContent = s; });
+  document.getElementById("langSelect").value = lang;
+}
+
+const STEPS = ["s1","s2","s3","s4","s5"];
+let stepTimer;
+
+function showLoadingSteps() {
+  let i = 0;
+  stepTimer = setInterval(() => {
+    if (i < STEPS.length) {
+      if (i > 0) document.getElementById(STEPS[i-1]).classList.add("done");
+      document.getElementById(STEPS[i]).classList.add("show");
+      i++;
+    }
+  }, 900);
+}
+
+function resetSteps() {
+  clearInterval(stepTimer);
+  STEPS.forEach(s => { const el = document.getElementById(s); el.classList.remove("show","done"); });
+}
+
+async function generateCurriculum() {
+  const t = T[currentLang];
+  const topic = document.getElementById("topic").value.trim();
+  const audience = document.getElementById("audience").value.trim();
+  const level = document.getElementById("level").value;
+  const duration = document.getElementById("duration").value;
+  const goals = document.getElementById("goals").value.trim();
+  const errorBox = document.getElementById("errorBox");
+  errorBox.classList.remove("active");
+
+  if (!topic || !audience) { errorBox.textContent = t.errFill; errorBox.classList.add("active"); return; }
+
+  const btn = document.getElementById("generateBtn");
+  btn.disabled = true;
+  document.getElementById("loading").classList.add("active");
+  document.getElementById("result").classList.remove("active");
+  document.getElementById("result").innerHTML = "";
+  resetSteps(); showLoadingSteps();
+
+  const prompt = `You are an expert instructional designer. Create a detailed professional course curriculum.
+
+TOPIC: ${topic}
+TARGET AUDIENCE: ${audience}
+LEVEL: ${level}
+TOTAL DURATION: ${duration}
+${goals ? "CREATOR GOALS: "+goals : ""}
+
+Respond ONLY with a valid JSON object, no text before or after, no markdown, no backticks:
+{
+  "title": "Course title",
+  "description": "Course description in 2-3 sentences",
+  "totalModules": number,
+  "totalLessons": number,
+  "estimatedHours": number,
+  "level": "${level}",
+  "modules": [
+    {
+      "number": 1,
+      "title": "Module title",
+      "duration": "XX min",
+      "lessons": [
+        {"type": "video", "title": "Lesson title", "description": "What this covers", "duration": "XX min"},
+        {"type": "exercise", "title": "Exercise title", "description": "Practical exercise description", "duration": "XX min"},
+        {"type": "quiz", "title": "Quiz title", "description": "Knowledge check", "duration": "10 min"}
+      ],
+      "learningObjectives": ["Objective 1", "Objective 2", "Objective 3"],
+      "quizQuestions": [
+        {"question": "Question?", "options": ["A", "B", "C", "D"]},
+        {"question": "Question?", "options": ["A", "B", "C", "D"]}
+      ]
+    }
+  ]
+}
+Create 4-6 modules, each with 3-5 lessons. Mix videos, exercises and quizzes. ALL content must be written in ${t.contentLang}.`;
+
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 4000, messages: [{role: "user", content: prompt}] })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error?.message || "API error");
+    const raw = data.content.map(b => b.text||"").join("");
+    const curriculum = JSON.parse(raw.replace(/```json|```/g,"").trim());
+    clearInterval(stepTimer);
+    STEPS.forEach(s => document.getElementById(s).classList.add("done","show"));
+    setTimeout(() => { document.getElementById("loading").classList.remove("active"); renderResult(curriculum); }, 400);
+  } catch(err) {
+    clearInterval(stepTimer);
+    document.getElementById("loading").classList.remove("active");
+    errorBox.textContent = T[currentLang].errGen + " (" + err.message + ")";
+    errorBox.classList.add("active");
+  } finally { btn.disabled = false; }
+}
+
+function renderResult(c) {
+  const t = T[currentLang];
+  const icons = {video:"▶", quiz:"◆", exercise:"✎"};
+  const typeLabel = {video:t.video, quiz:t.quiz, exercise:t.exercise};
+
+  const modulesHTML = c.modules.map(m => `
+    <div class="module" id="mod${m.number}">
+      <div class="module-head" onclick="toggleModule(${m.number})">
+        <div class="module-num">${String(m.number).padStart(2,"0")}</div>
+        <div class="module-info">
+          <div class="module-name">${m.title}</div>
+          <div class="module-duration">${m.duration} · ${m.lessons.length} ${t.lblLessons.toLowerCase()}</div>
+        </div>
+        <div class="module-toggle">▾</div>
+      </div>
+      <div class="module-body">
+        <div class="lessons">
+          ${m.lessons.map(l=>`
+            <div class="lesson">
+              <div class="lesson-icon ${l.type}">${icons[l.type]||"•"}</div>
+              <div>
+                <div class="lesson-title">${l.title}</div>
+                <div class="lesson-sub">${typeLabel[l.type]||l.type} · ${l.duration} · ${l.description}</div>
+              </div>
+            </div>`).join("")}
+        </div>
+        <div class="objective-block">
+          <div class="obj-title">${t.objLabel}</div>
+          <div class="objectives">${m.learningObjectives.map(o=>`<div class="objective">${o}</div>`).join("")}</div>
+        </div>
+        ${m.quizQuestions&&m.quizQuestions.length?`
+        <div class="quiz-section">
+          <div class="quiz-title">◆ ${t.quizLabel}</div>
+          ${m.quizQuestions.map(q=>`
+            <div class="quiz-q">${q.question}</div>
+            <div class="quiz-opts">${q.options.map((o,i)=>`<div class="quiz-opt">${["A","B","C","D"][i]}. ${o}</div>`).join("")}</div>
+          `).join("")}
+        </div>`:""}
+      </div>
+    </div>`).join("");
+
+  document.getElementById("result").innerHTML = `
+    <div class="result-header">
+      <div>
+        <div class="result-title">${c.title}</div>
+        <div class="result-meta">
+          <span class="meta-pill">📚 ${c.totalModules} ${t.lblModules.toLowerCase()}</span>
+          <span class="meta-pill">🎓 ${c.totalLessons} ${t.lblLessons.toLowerCase()}</span>
+          <span class="meta-pill">⏱ ${c.estimatedHours}h</span>
+          <span class="meta-pill">◉ ${c.level}</span>
+        </div>
+      </div>
+      <div class="export-btns">
+        <button class="btn-outline" onclick="copyJSON()">${t.copyBtn}</button>
+        <button class="btn-outline" onclick="window.print()">${t.exportBtn}</button>
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-val">${c.totalModules}</div><div class="stat-label">${t.lblModules}</div></div>
+      <div class="stat-card"><div class="stat-val">${c.totalLessons}</div><div class="stat-label">${t.lblLessons}</div></div>
+      <div class="stat-card"><div class="stat-val">${c.estimatedHours}h</div><div class="stat-label">${t.lblDurationStat}</div></div>
+      <div class="stat-card"><div class="stat-val">${c.modules.reduce((a,m)=>a+(m.quizQuestions?.length||0),0)}</div><div class="stat-label">Quiz</div></div>
+    </div>
+    <div class="desc-block">${c.description}</div>
+    <div class="section-label">${t.structureLabel}</div>
+    ${modulesHTML}
+    <div class="sales-block">
+      <div class="sales-title">${t.salesTitle}</div>
+      <div class="sales-sub">${t.salesSub}</div>
+      <div class="price-tag">$49–199</div>
+      <div style="font-size:13px;color:var(--muted2);margin-top:4px;">${t.priceNote}</div>
+    </div>`;
+
+  document.getElementById("result").classList.add("active");
+  document.getElementById("result").scrollIntoView({behavior:"smooth", block:"start"});
+  window._curriculumData = c;
+}
+
+function toggleModule(n) { document.getElementById("mod"+n).classList.toggle("open"); }
+function copyJSON() {
+  if (window._curriculumData) { navigator.clipboard.writeText(JSON.stringify(window._curriculumData,null,2)); alert("Copied!"); }
+}
+
+setLang("en");
+</script>
+</body>
+</html>
